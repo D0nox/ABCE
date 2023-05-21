@@ -1,0 +1,23 @@
+#white first move
+rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -;e2e4
+
+#black first move
+rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3;e7e5
+
+#scandinavian defense or something for white
+rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6;e4d5
+rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq -;b1c3
+rnb1kbnr/ppp1pppp/4q3/8/8/2N5/PPPP1PPP/R1BQKBNR w KQkq -;f1e2
+#computer generated
+rnb1kbnr/pp2pppp/4q3/2p5/8/2N5/PPPPBPPP/R1BQK1NR w KQkq c6;d2d4
+rnb1kbnr/pp2pppp/4q3/8/2pP4/2N5/PPP1BPPP/R1BQK1NR w KQkq -;d1d2
+rnb1kbnr/pp2ppp1/4q2p/8/2pP4/2N5/PPPQBPPP/R1B1K1NR w KQkq -;d2e3
+rnb1kb1r/pp2ppp1/4qn1p/8/2pP4/2N1Q3/PPP1BPPP/R1B1K1NR w KQkq -;e3e6
+rn2kb1r/pp2ppp1/4bn1p/8/2pP4/2N5/PPP1BPPP/R1B1K1NR w KQkq -;e2f3
+rnb1kb1r/pp2ppp1/5n1p/8/2pP4/2N2B2/PPP2PPP/R1B1K1NR w KQkq -;c3d5
+rnb1kb1r/pp2ppp1/7p/3n4/2pP4/5B2/PPP2PPP/R1B1K1NR w KQkq -;f3d5
+
+#mainline white
+rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -;g1f3
+#mainline black
+rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -;g8f6
