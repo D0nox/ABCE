@@ -789,7 +789,7 @@ const uint64_t trim_left = 0x8080808080808080;
 const uint64_t trim_right = 0x101010101010101;
 const int both_king_locations = e1 * 100 + e8;
 const int max_saved_board_n = 100;
-const int DEPTH = 6;
+const int DEPTH = 8;
 int HOW_MANY_THREADS_AT_THE_SAME_TIME;
 const int QUESCENCE_SEARCH_DEPTH = 10;
 
@@ -939,11 +939,11 @@ void read_precomputed_moves(std::unordered_map<std::string, std::string>& precom
                 precomputed_moves[split_line[0]] = split_line[1];
             }
         }
-        
+
         input_file.close();
     }
     else {
-        std::cout << "ZE \""<< file_name <<"\" FILE is MISSING\n";
+        std::cout << "ZE \"" << file_name << "\" FILE is MISSING\n";
     }
 }
 std::vector<std::string> split(const std::string line, char split_symbol) {
@@ -989,16 +989,15 @@ bool are_chessboards_equal(chessboard a, chessboard b) {
         a.white.queen == b.white.queen && a.white.rooks == b.white.rooks && a.castling == b.castling && a.keep_en_passant == b.keep_en_passant && a.king_squares == b.king_squares &&
         a.black.bishops == b.black.bishops && a.black.pawns == b.black.pawns && a.black.knights == b.black.knights && a.black.king == b.black.king &&
         a.black.queen == b.black.queen && a.black.rooks == b.black.rooks;
-     ;
 }
-std::vector<string> check_for_three_fold_repetition;
-bool has_position_occured_two_times(string position) {
+std::vector<chessboard> check_for_three_fold_repetition;
+bool has_position_occured_two_times(chessboard position) {
     if (check_for_three_fold_repetition.size() < 3) return false;
     bool occured = false;
     //std::cout << "searching for:/" << position << "/\n";
-    for (const string& pos : check_for_three_fold_repetition) {
+    for (const chessboard& pos : check_for_three_fold_repetition) {
         //std::cout << "/" << pos << "/\n";
-        if (pos == position) {
+        if (are_chessboards_equal(pos, position)) {
             if (occured)return true;
             else occured = true;
         }
@@ -1044,16 +1043,16 @@ uint64_t get_pawn_moves(uint64_t occupancy, int square, bool is_white, uint64_t 
     }
     return pawn_moves;
 }
-uint64_t get_pawn_attacks(int square, bool white){
+uint64_t get_pawn_attacks(int square, bool white) {
     uint64_t pawn_attacks = 0, temp = 0;
     set_bit(temp, square);
-    if(white){
-        pawn_attacks |= (temp & ~ trim_right) << 7;
-        pawn_attacks |= (temp & ~ trim_left) << 9;
+    if (white) {
+        pawn_attacks |= (temp & ~trim_right) << 7;
+        pawn_attacks |= (temp & ~trim_left) << 9;
     }
     else {
-        pawn_attacks |= (temp & ~ trim_right) >> 7;
-        pawn_attacks |= (temp & ~ trim_left) >> 9;
+        pawn_attacks |= (temp & ~trim_right) >> 7;
+        pawn_attacks |= (temp & ~trim_left) >> 9;
     }
     return pawn_attacks;
 }
@@ -1097,49 +1096,49 @@ bool king_in_check(chessboard BOARD, bool white);
 uint64_t get_queen_attacks(int square, uint64_t occupancy) {
     return get_rook_attacks(square, occupancy) | get_bishop_attacks(square, occupancy);
 }
-int get_xray_attacks(chessboard BOARD, uint64_t attack_rays, bool white, char piece, int square){
+int get_xray_attacks(chessboard BOARD, uint64_t attack_rays, bool white, char piece, int square) {
     uint64_t all_piece_occupancy = get_occupancy(BOARD), attacked_opponent_pieces;
     int power = 1, returnvalue = 0;
-    if(white){
-        while((attack_rays & all_piece_occupancy) != 0){
-            if(piece == 'q'){
+    if (white) {
+        while ((attack_rays & all_piece_occupancy) != 0) {
+            if (piece == 'q') {
                 all_piece_occupancy &= ~get_queen_attacks(square, all_piece_occupancy);
             }
-            else if(piece == 'b'){
+            else if (piece == 'b') {
                 all_piece_occupancy &= ~get_bishop_attacks(square, all_piece_occupancy);
             }
-            else if(piece == 'r'){
+            else if (piece == 'r') {
                 all_piece_occupancy &= ~get_rook_attacks(square, all_piece_occupancy);
             }
             attacked_opponent_pieces = get_occupancy(BOARD.black) & get_queen_attacks(square, all_piece_occupancy);
             returnvalue += get_attacked_pieces_value(BOARD, attacked_opponent_pieces, true) * pow(0.5, power);
-            if((attacked_opponent_pieces & BOARD.black.king) != 0) returnvalue += 18 * pow(0.5, power);
+            if ((attacked_opponent_pieces & BOARD.black.king) != 0) returnvalue += 18 * pow(0.5, power);
             power++;
         }
     }
-    else{
-        while((attack_rays & all_piece_occupancy) != 0){
-            if(piece == 'q'){
+    else {
+        while ((attack_rays & all_piece_occupancy) != 0) {
+            if (piece == 'q') {
                 all_piece_occupancy &= ~get_queen_attacks(square, all_piece_occupancy);
             }
-            else if(piece == 'b'){
+            else if (piece == 'b') {
                 all_piece_occupancy &= ~get_bishop_attacks(square, all_piece_occupancy);
             }
-            else if(piece == 'r'){
+            else if (piece == 'r') {
                 all_piece_occupancy &= ~get_rook_attacks(square, all_piece_occupancy);
             }
             attacked_opponent_pieces = get_occupancy(BOARD.white) & get_queen_attacks(square, all_piece_occupancy);
             returnvalue += get_attacked_pieces_value(BOARD, attacked_opponent_pieces, false) * pow(0.5, power);
-            if((attacked_opponent_pieces & BOARD.white.king) != 0) returnvalue += 18 * pow(0.5, power);
+            if ((attacked_opponent_pieces & BOARD.white.king) != 0) returnvalue += 18 * pow(0.5, power);
             power++;
         }
     }
     return returnvalue;
 }
-int get_attacked_pieces_value(chessboard BOARD, uint64_t attacked, bool white_attacking){
+int get_attacked_pieces_value(chessboard BOARD, uint64_t attacked, bool white_attacking) {
     int temp_nr, return_value = 0;
-    if(white_attacking){
-        while(attacked != 0){
+    if (white_attacking) {
+        while (attacked != 0) {
             temp_nr = find_first_set_bit(attacked);
             if (get_bit(BOARD.black.bishops, temp_nr) != 0) return_value += 30;
             else if (get_bit(BOARD.black.pawns, temp_nr) != 0) return_value += 10;
@@ -1149,8 +1148,8 @@ int get_attacked_pieces_value(chessboard BOARD, uint64_t attacked, bool white_at
             pop_bit(attacked, temp_nr);
         }
     }
-    else{
-        while(attacked != 0){
+    else {
+        while (attacked != 0) {
             temp_nr = find_first_set_bit(attacked);
             if (get_bit(BOARD.white.bishops, temp_nr) != 0) return_value += 30;
             else if (get_bit(BOARD.white.pawns, temp_nr) != 0) return_value += 10;
@@ -1227,23 +1226,33 @@ chessboard initialize_chessboard(std::string FenCode, bool& White, int& time) {
     }
     return board;
 }
-void sort_positions(cheese_boards BOARDS, bool white) {
+void sort_positions(cheese_boards& BOARDS, bool white) {
     chessboard temp_board;
     int temp_eval, tempI;
-    for (int i = 0; i < ALL_LAYER_BOARDS.n; i++) {
+    for (int i = 0; i < BOARDS.n; i++) {
         tempI = i;
         temp_eval = BOARDS.eval[i];
-        for (int j = i + 1; j < ALL_LAYER_BOARDS.n; j++) {
-            if (BOARDS.eval[j] > temp_eval) {
-                tempI = j;
-                temp_eval = BOARDS.eval[j];
+        for (int j = i + 1; j < BOARDS.n; j++) {
+            if (white) {
+                if (BOARDS.eval[j] > temp_eval) {
+                    tempI = j;
+                    temp_eval = BOARDS.eval[j];
+                }
+            }
+            else {
+                if (BOARDS.eval[j] < temp_eval) {
+                    tempI = j;
+                    temp_eval = BOARDS.eval[j];
+                }
             }
         }
-        temp_board = ALL_LAYER_BOARDS.board[i];
-        ALL_LAYER_BOARDS.board[i] = ALL_LAYER_BOARDS.board[tempI];
-        ALL_LAYER_BOARDS.board[tempI] = temp_board;
-        ALL_LAYER_BOARDS.eval[tempI] = ALL_LAYER_BOARDS.eval[i];
-        ALL_LAYER_BOARDS.eval[i] = temp_eval;
+        if (tempI != i) {
+            temp_board = BOARDS.board[i];
+            BOARDS.board[i] = BOARDS.board[tempI];
+            BOARDS.board[tempI] = temp_board;
+            BOARDS.eval[tempI] = ALL_LAYER_BOARDS.eval[i];
+            BOARDS.eval[i] = temp_eval;
+        }
     }
 }
 unsigned int find_first_set_bit(uint64_t x)
@@ -1433,9 +1442,9 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
     }
 
     int ERoMoE = 0;
-    if (move_count < 15)
+    if (move_count < 16)
         ERoMoE = -1;
-    else if (move_count > 14 && allPieces_n > 20)
+    else if (move_count > 15 && allPieces_n > 20)
         ERoMoE = 0;
     else
         ERoMoE = 1;
@@ -1462,7 +1471,7 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
     if ((temp_n = Count_bits(BOARD.white.pawns)) != 0) {
         temp_pieces = BOARD.white.pawns;
         eval += temp_n * pawn_value;
-        if (ERoMoE > -1){
+        if (ERoMoE > -1) {
             eval += (Count_bits(get_all_pawn_attacks(BOARD.white.pawns, true)) + Count_bits(get_all_pawn_moves(BOARD.white.pawns, all_occupancy, true))) * 5;
             control |= get_all_pawn_attacks(BOARD.white.pawns, true);
         }
@@ -1473,20 +1482,20 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
                 eval += EarlyGameCenterControlForPawnsW[temp_nr];
             }
             else if (ERoMoE > -1) {
-                
+
                 if ((BOARD.black.pawns & (trim_left >> temp_nr % 8)) == 0) { set_bit(passed_pawns, temp_nr); }
 
                 pop_bit(BOARD.white.pawns, temp_nr);
                 if ((BOARD.white.pawns & (trim_left >> temp_nr % 8)) != 0) { set_bit(doubled_pawns, temp_nr); }
                 set_bit(BOARD.white.pawns, temp_nr);
 
-                if((BOARD.white.pawns & get_king_attacks(temp_nr)) == 0){set_bit(isolated_pawns, temp_nr);}
+                if ((BOARD.white.pawns & get_king_attacks(temp_nr)) == 0) { set_bit(isolated_pawns, temp_nr); }
 
-                if(get_bit(get_all_pawn_attacks(BOARD.black.pawns, false), temp_nr + 8) != 0){
-                    if(get_bit(get_all_pawn_attacks(BOARD.white.pawns, true), temp_nr + 8) != 0)
+                if (get_bit(get_all_pawn_attacks(BOARD.black.pawns, false), temp_nr + 8) != 0) {
+                    if (get_bit(get_all_pawn_attacks(BOARD.white.pawns, true), temp_nr + 8) != 0)
                         set_bit(semi_backwards_pawns, temp_nr);
-                    else{
-                        if(Count_bits(BOARD.black.pawns & get_pawn_attacks(temp_nr + 8, true)) == 2)
+                    else {
+                        if (Count_bits(BOARD.black.pawns & get_pawn_attacks(temp_nr + 8, true)) == 2)
                             set_bit(backwards_fated_pawns, temp_nr);
                         else {
                             set_bit(backwards_pawns, temp_nr);
@@ -1617,26 +1626,26 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
                 temp_nr = find_first_set_bit(temp_pieces);
                 eval += 25 * engame_multiplier * bonus_for_further_passers[temp_nr];//63- for black
                 if (get_bit(control, temp_nr) != 0)eval += 25 * engame_multiplier * bonus_for_further_passers[temp_nr];
-                else if ((passed_pawns & get_king_attacks(temp_nr)) != 0){
+                else if ((passed_pawns & get_king_attacks(temp_nr)) != 0) {
                     eval += 25 * engame_multiplier * bonus_for_further_passers[temp_nr];//63- for black
-                    if(Count_bits(passed_pawns & get_king_attacks(temp_nr)) > 1) add_more_detailed_eval += 1.25;//more eval for 3 or more passers
+                    if (Count_bits(passed_pawns & get_king_attacks(temp_nr)) > 1) add_more_detailed_eval += 1.25;//more eval for 3 or more passers
                 }
                 pop_bit(temp_pieces, temp_nr);
             }
             //calculating the distance between passed pawns
-            if(count_bits(passed_pawns) > 1){
+            if (count_bits(passed_pawns) > 1) {
                 int count = 0, slider = 1, bonus = 0;
                 bool ehehehehe = false;
-                if((trim_left & passed_pawns) != 0){
+                if ((trim_left & passed_pawns) != 0) {
                     ehehehehe = true;
                 }
-                while(slider < 8){
-                    if(((trim_left >> slider) & passed_pawns) != 0){
-                        if(ehehehehe)bonus += count * 5;
+                while (slider < 8) {
+                    if (((trim_left >> slider) & passed_pawns) != 0) {
+                        if (ehehehehe)bonus += count * 5;
                         ehehehehe = true;
                         count = 0;
                     }
-                    else if(ehehehehe){
+                    else if (ehehehehe) {
                         count++;
                     }
                     slider++;
@@ -1650,32 +1659,41 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
         if (isolated_pawns != 0) {
             eval += Count_bits(isolated_pawns) * -20 * engame_multiplier;
         }
-        if(backwards_pawns != 0){
-            while(backwards_pawns != 0){
+        if (backwards_pawns != 0) {
+            while (backwards_pawns != 0) {
                 temp_nr = find_first_set_bit(backwards_pawns);
-                if(temp_nr/ 8 < 5)//black > 2
-                    eval += -25 * pow(0.5, (temp_nr/ 8 - 1)) * engame_multiplier;//black 63-
+                if (temp_nr / 8 < 5)//black > 2
+                    eval += -25 * pow(0.5, (temp_nr / 8 - 1)) * engame_multiplier;//black 63-
                 pop_bit(backwards_pawns, temp_nr);
             }
         }
-        if(semi_backwards_pawns != 0){
-            while(semi_backwards_pawns != 0){
+        if (semi_backwards_pawns != 0) {
+            while (semi_backwards_pawns != 0) {
                 temp_nr = find_first_set_bit(semi_backwards_pawns);//black 63-
-                if(temp_nr/ 8 < 3)
-                    eval += -15 * pow(0.5, (temp_nr/ 8 - 1)) * engame_multiplier;
+                if (temp_nr / 8 < 3)
+                    eval += -15 * pow(0.5, (temp_nr / 8 - 1)) * engame_multiplier;
                 pop_bit(semi_backwards_pawns, temp_nr);
             }
         }
-        if(backwards_fated_pawns != 0){
-            while(backwards_fated_pawns != 0){
+        if (backwards_fated_pawns != 0) {
+            while (backwards_fated_pawns != 0) {
                 temp_nr = find_first_set_bit(backwards_fated_pawns);//black 63-
-                if(temp_nr/ 8 < 5)
-                    eval += -35 * pow(0.5, (temp_nr/ 8 - 1)) * engame_multiplier;
+                if (temp_nr / 8 < 5)
+                    eval += -35 * pow(0.5, (temp_nr / 8 - 1)) * engame_multiplier;
                 pop_bit(backwards_fated_pawns, temp_nr);
             }
         }
     }
-    eval += get_attacked_pieces_value(BOARD, (control & black_occupancy), true);
+    //control and defense
+    if (ERoMoE > -1) {
+        eval += get_attacked_pieces_value(BOARD, (control & black_occupancy), true);
+        eval += 0.5 * get_attacked_pieces_value(BOARD, (control & white_occupancy), true);
+        if ((temp_n = Count_bits(~control & white_occupancy)) != 0) {
+            if (temp_n < 3)eval += temp_n * -5;
+            else eval += temp_n * -7;
+        }
+        add_more_detailed_eval += Count_bits(~control & BOARD.white.pawns) * -0.4;//undefended pawns
+    }
 
     eval += add_more_detailed_eval;
 
@@ -1713,7 +1731,7 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
     if ((temp_n = Count_bits(BOARD.black.pawns)) != 0) {
         temp_pieces = BOARD.black.pawns;
         eval += temp_n * pawn_value;
-        if (ERoMoE > -1){
+        if (ERoMoE > -1) {
             eval += (Count_bits(get_all_pawn_attacks(BOARD.black.pawns, false)) + Count_bits(get_all_pawn_moves(BOARD.black.pawns, all_occupancy, false))) * 5;
             control |= get_all_pawn_attacks(BOARD.black.pawns, false);
         }
@@ -1731,13 +1749,13 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
                 if ((BOARD.black.pawns & (trim_left >> temp_nr % 8)) != 0) { set_bit(doubled_pawns, temp_nr); }
                 set_bit(BOARD.black.pawns, temp_nr);
 
-                if((BOARD.black.pawns & get_king_attacks(temp_nr)) == 0){set_bit(isolated_pawns, temp_nr);}
+                if ((BOARD.black.pawns & get_king_attacks(temp_nr)) == 0) { set_bit(isolated_pawns, temp_nr); }
 
-                if(get_bit(get_all_pawn_attacks(BOARD.white.pawns, true), temp_nr - 8) != 0){
-                    if(get_bit(get_all_pawn_attacks(BOARD.black.pawns, false), temp_nr - 8) != 0)
+                if (get_bit(get_all_pawn_attacks(BOARD.white.pawns, true), temp_nr - 8) != 0) {
+                    if (get_bit(get_all_pawn_attacks(BOARD.black.pawns, false), temp_nr - 8) != 0)
                         set_bit(semi_backwards_pawns, temp_nr);
-                    else{
-                        if(Count_bits(BOARD.black.pawns & get_pawn_attacks(temp_nr - 8, false)) == 2)
+                    else {
+                        if (Count_bits(BOARD.black.pawns & get_pawn_attacks(temp_nr - 8, false)) == 2)
                             set_bit(backwards_fated_pawns, temp_nr);
                         else {
                             set_bit(backwards_pawns, temp_nr);
@@ -1841,12 +1859,12 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
             pop_bit(temp_pieces, temp_nr);
         }
     }
-    
+
 
     eval += king_value;
     temp_pieces = BOARD.black.king;
     temp_nr = find_first_set_bit(temp_pieces);
-    
+
     if (ERoMoE < 1) {
         eval += EarlyGameHideKingInTheCorner[temp_nr];
     }
@@ -1867,28 +1885,28 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
         if ((temp_pieces = passed_pawns) != 0) {
             while (temp_pieces != 0) {
                 temp_nr = find_first_set_bit(temp_pieces);
-                eval += 25 * engame_multiplier * bonus_for_further_passers[63-temp_nr];//63- for black
-                if (get_bit(control, temp_nr) != 0)eval += 25 * engame_multiplier * bonus_for_further_passers[63-temp_nr];
-                else if ((passed_pawns & get_king_attacks(temp_nr)) != 0){
-                    eval += 25 * engame_multiplier * bonus_for_further_passers[63-temp_nr];//63- for black
-                    if(Count_bits(passed_pawns & get_king_attacks(temp_nr)) > 1) add_more_detailed_eval += 1.25;//more eval for 3 or more passers
+                eval += 25 * engame_multiplier * bonus_for_further_passers[63 - temp_nr];//63- for black
+                if (get_bit(control, temp_nr) != 0)eval += 25 * engame_multiplier * bonus_for_further_passers[63 - temp_nr];
+                else if ((passed_pawns & get_king_attacks(temp_nr)) != 0) {
+                    eval += 25 * engame_multiplier * bonus_for_further_passers[63 - temp_nr];//63- for black
+                    if (Count_bits(passed_pawns & get_king_attacks(temp_nr)) > 1) add_more_detailed_eval += 1.25;//more eval for 3 or more passers
                 }
                 pop_bit(temp_pieces, temp_nr);
             }
             //calculating the distance between passed pawns
-            if(count_bits(passed_pawns) > 1){
+            if (count_bits(passed_pawns) > 1) {
                 int count = 0, slider = 1, bonus = 0;
                 bool ehehehehe = false;
-                if((trim_left & passed_pawns) != 0){
+                if ((trim_left & passed_pawns) != 0) {
                     ehehehehe = true;
                 }
-                while(slider < 8){
-                    if(((trim_left >> slider) & passed_pawns) != 0){
-                        if(ehehehehe)bonus += count * 5;
+                while (slider < 8) {
+                    if (((trim_left >> slider) & passed_pawns) != 0) {
+                        if (ehehehehe)bonus += count * 5;
                         ehehehehe = true;
                         count = 0;
                     }
-                    else if(ehehehehe){
+                    else if (ehehehehe) {
                         count++;
                     }
                     slider++;
@@ -1902,33 +1920,43 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
         if (isolated_pawns != 0) {
             eval += Count_bits(isolated_pawns) * -20 * engame_multiplier;
         }
-        if(backwards_pawns != 0){
-            while(backwards_pawns != 0){
+        if (backwards_pawns != 0) {
+            while (backwards_pawns != 0) {
                 temp_nr = find_first_set_bit(backwards_pawns);
-                if(temp_nr/ 8 > 2)//black > 2
-                    eval += -25 * pow(0.5, (63-(temp_nr/ 8 - 1))) * engame_multiplier;//black 63-
+                if (temp_nr / 8 > 2)//black > 2
+                    eval += -25 * pow(0.5, (63 - (temp_nr / 8 - 1))) * engame_multiplier;//black 63-
                 pop_bit(backwards_pawns, temp_nr);
             }
         }
-        if(semi_backwards_pawns != 0){
-            while(semi_backwards_pawns != 0){
+        if (semi_backwards_pawns != 0) {
+            while (semi_backwards_pawns != 0) {
                 temp_nr = find_first_set_bit(semi_backwards_pawns);//black 63-
-                if(temp_nr/ 8 < 3)
-                    eval += -15 * pow(0.5, (63-(temp_nr/ 8 - 1))) * engame_multiplier;
+                if (temp_nr / 8 < 3)
+                    eval += -15 * pow(0.5, (63 - (temp_nr / 8 - 1))) * engame_multiplier;
                 pop_bit(semi_backwards_pawns, temp_nr);
             }
         }
-        if(backwards_fated_pawns != 0){
-            while(backwards_fated_pawns != 0){
+        if (backwards_fated_pawns != 0) {
+            while (backwards_fated_pawns != 0) {
                 temp_nr = find_first_set_bit(backwards_fated_pawns);//black 63-
-                if(temp_nr/ 8 < 5)
-                    eval += -35 * pow(0.5, (63-(temp_nr/ 8 - 1))) * engame_multiplier;
+                if (temp_nr / 8 < 5)
+                    eval += -35 * pow(0.5, (63 - (temp_nr / 8 - 1))) * engame_multiplier;
                 pop_bit(backwards_fated_pawns, temp_nr);
             }
         }
     }
+    //control and defense
+    if (ERoMoE > -1) {
+        eval += get_attacked_pieces_value(BOARD, (control & white_occupancy), false);
+        eval += 0.5 * get_attacked_pieces_value(BOARD, (control & black_occupancy), false);
+        if ((temp_n = Count_bits(~control & black_occupancy)) != 0) {
+            if (temp_n < 3)eval += temp_n * -5;
+            else eval += temp_n * -7;
+        }
+        add_more_detailed_eval += Count_bits(~control & BOARD.black.pawns) * -0.4;
+    }
 
-    eval += get_attacked_pieces_value(BOARD, (control & white_occupancy), false);
+
 
     eval += add_more_detailed_eval;
 
@@ -1938,7 +1966,7 @@ int EVAL(chessboard BOARD, int depth, int alpha, int beta) {
 
     return finalEval;
 }
-void check_for_king_check_and_continue_if_no(chessboard BOARD, int depth, bool White, int& alpha, int& beta, int& eval, bool &are_there_any_legal_moves, bool &skip_available, bool stable_position);
+void check_for_king_check_and_continue_if_no(chessboard BOARD, int depth, bool White, int& alpha, int& beta, int& eval, bool& are_there_any_legal_moves, bool& skip_available, bool stable_position);
 bool king_in_check(chessboard BOARD, bool white) {
     int kingsquare;
     uint64_t temp_attack, all_occupancy = get_occupancy(BOARD);
@@ -2007,7 +2035,7 @@ bool is_position_stable(chessboard BOARD, bool white_to_go) {
 void generate_movess(chessboard BOARD, int depth, int White, int alpha, int beta, int& eval, bool stable_position) {
     bool are_there_any_legal_moves = false, skip_available = false;
     if (depth > 0) {
-        stable_position = 1;
+        stable_position = true;
         int temp_eval = 100000;
         if (White)
             temp_eval = -100000;
@@ -2630,7 +2658,7 @@ void generate_movess(chessboard BOARD, int depth, int White, int alpha, int beta
     }
     else {
         //if (stable_position && !king_in_check(BOARD, !White))
-            eval = EVAL(BOARD, depth, alpha, beta);
+        eval = EVAL(BOARD, depth, alpha, beta);
         /*else {
             if (!is_position_stable(BOARD, !White) && BOARD.quescent_search_depth_remaining > 0) {
                 int temp_eval = -100000;
@@ -2687,23 +2715,26 @@ void generate_moves(chessboard BOARD, bool White, int depth, std::string& move, 
     int eval;
     generate_movess(BOARD, depth, White, 0, 0, eval, true);
     if (ALL_LAYER_BOARDS.n != 0) {
-        std::cout << (White ? "White" : "Black") << " has " << ALL_LAYER_BOARDS.n - 1 << " available move" << ((ALL_LAYER_BOARDS.n != 1) ? "s" : "") << ":\n\n";
+        std::cout << (White ? "White" : "Black") << " has " << ALL_LAYER_BOARDS.n << " available move" << ((ALL_LAYER_BOARDS.n != 1) ? "s" : "") << ":\n\n";
         for (int i = 0; i < ALL_LAYER_BOARDS.n; i++) {
             if (White)
                 std::cout << change_to_human_language(get_occupancy(BOARD.white), get_occupancy(ALL_LAYER_BOARDS.board[i].white)) << "\\";
             else
                 std::cout << change_to_human_language(get_occupancy(BOARD.black), get_occupancy(ALL_LAYER_BOARDS.board[i].black)) << "\\";
-            //print_board(ALL_LAYER_BOARDS.board[i]);
         }
         std::cout << "\n\nEvaluating the position...\n\n";
+
         sort_positions(ALL_LAYER_BOARDS, White);
+
+
         int alpha = -100000, beta = 100000, Eval = -100000;
-        HOW_MANY_THREADS_AT_THE_SAME_TIME = 1;
+        HOW_MANY_THREADS_AT_THE_SAME_TIME = 4;
         if (White)Eval = 100000;
+
         for (int i = 0; i < ALL_LAYER_BOARDS.n;) {
             for (int j = 0; (j < HOW_MANY_THREADS_AT_THE_SAME_TIME && j + i < ALL_LAYER_BOARDS.n); j++) {
                 ALL_LAYER_BOARDS.eval[i + j] = Eval;
-                threads.push_back(std::thread(generate_movess, ALL_LAYER_BOARDS.board[i + j], DEPTH - 1, !White, alpha, beta, std::ref(ALL_LAYER_BOARDS.eval[i + j]), true));
+                threads.push_back(std::thread(generate_movess, ALL_LAYER_BOARDS.board[i + j], DEPTH - 1 - 4, !White, alpha, beta, std::ref(ALL_LAYER_BOARDS.eval[i + j]), true));
             }
             for (auto& thread : threads)
                 if (thread.joinable())thread.join();
@@ -2718,23 +2749,94 @@ void generate_moves(chessboard BOARD, bool White, int depth, std::string& move, 
             i += HOW_MANY_THREADS_AT_THE_SAME_TIME;
             HOW_MANY_THREADS_AT_THE_SAME_TIME += 0;
         }
+
         sort_positions(ALL_LAYER_BOARDS, White);
-        bool has_position_occured_two_times_temp = has_position_occured_two_times(fen);
-            
+        std::cout << "Completed depth 4\n";
+
+        alpha = -100000, beta = 100000, Eval = -100000;
+        HOW_MANY_THREADS_AT_THE_SAME_TIME = 6;
+        if (White)Eval = 100000;
+
+        for (int i = 0; i < ALL_LAYER_BOARDS.n;) {
+            for (int j = 0; (j < HOW_MANY_THREADS_AT_THE_SAME_TIME && j + i < ALL_LAYER_BOARDS.n); j++) {
+                ALL_LAYER_BOARDS.eval[i + j] = Eval;
+                threads.push_back(std::thread(generate_movess, ALL_LAYER_BOARDS.board[i + j], DEPTH - 1 - 2, !White, alpha, beta, std::ref(ALL_LAYER_BOARDS.eval[i + j]), true));
+            }
+            for (auto& thread : threads)
+                if (thread.joinable())thread.join();
+            for (int j = 0; (j < HOW_MANY_THREADS_AT_THE_SAME_TIME && j + i < ALL_LAYER_BOARDS.n); j++) {
+                if (White) {
+                    alpha = max(alpha, ALL_LAYER_BOARDS.eval[i + j]);
+                }
+                else {
+                    beta = min(beta, ALL_LAYER_BOARDS.eval[i + j]);
+                }
+            }
+            i += HOW_MANY_THREADS_AT_THE_SAME_TIME;
+            HOW_MANY_THREADS_AT_THE_SAME_TIME += 0;
+        }
+
+        sort_positions(ALL_LAYER_BOARDS, White);
+        std::cout << "Completed depth 6\n";
+
+       /* int go8for_some_moves = 6;
+        if (ALL_LAYER_BOARDS.n < go8for_some_moves) {
+            go8for_some_moves = ALL_LAYER_BOARDS.n;
+        }
+
+        alpha = -100000, beta = 100000, Eval = -100000;
+        HOW_MANY_THREADS_AT_THE_SAME_TIME = 6;
+        if (White)Eval = 100000;
+
+        for (int j = 0; j < go8for_some_moves; j++) {
+            ALL_LAYER_BOARDS.eval[j] = Eval;
+            threads.push_back(std::thread(generate_movess, ALL_LAYER_BOARDS.board[j], DEPTH - 1 - 1, !White, alpha, beta, std::ref(ALL_LAYER_BOARDS.eval[j]), true));
+        }
+        for (auto& thread : threads)
+            if (thread.joinable())thread.join();
+
+        sort_positions(ALL_LAYER_BOARDS, White);
+        std::cout << "Completed depth 8 for the first\n" << go8for_some_moves<< "moves";*/
+
+
+
+
+        std::cout << "\n";
+        for (int i = 0; i < ALL_LAYER_BOARDS.n; i++) {
+            if (White)
+                std::cout << change_to_human_language(get_occupancy(BOARD.white), get_occupancy(ALL_LAYER_BOARDS.board[i].white)) << " " << ALL_LAYER_BOARDS.eval[i] << "\\";
+            else
+                std::cout << change_to_human_language(get_occupancy(BOARD.black), get_occupancy(ALL_LAYER_BOARDS.board[i].black)) << " " << ALL_LAYER_BOARDS.eval[i] << "\\";
+        }
+        std::cout << "\n\n";
         std::cout << "\nBest move: ";
         if (White) {
-            if (!has_position_occured_two_times_temp) {
+            if (!has_position_occured_two_times(ALL_LAYER_BOARDS.board[0]) || ALL_LAYER_BOARDS.eval[0] < 0) {
                 move = change_to_human_language(get_occupancy(BOARD.white), get_occupancy(ALL_LAYER_BOARDS.board[0].white));eval = ALL_LAYER_BOARDS.eval[0];
-                check_for_three_fold_repetition.push_back(fen);
+                check_for_three_fold_repetition.push_back(ALL_LAYER_BOARDS.board[0]);
             }
-            else{
-                std::cout << "\n(this position has occured before)\n";
+            else if (!has_position_occured_two_times(ALL_LAYER_BOARDS.board[1]) && ALL_LAYER_BOARDS.n > 1) {
                 move = change_to_human_language(get_occupancy(BOARD.white), get_occupancy(ALL_LAYER_BOARDS.board[1].white));eval = ALL_LAYER_BOARDS.eval[1];
-                check_for_three_fold_repetition.push_back(fen);
+                check_for_three_fold_repetition.push_back(ALL_LAYER_BOARDS.board[1]);
+            }
+            else if(ALL_LAYER_BOARDS.n > 2){
+                move = change_to_human_language(get_occupancy(BOARD.white), get_occupancy(ALL_LAYER_BOARDS.board[2].white));eval = ALL_LAYER_BOARDS.eval[2];
+                check_for_three_fold_repetition.push_back(ALL_LAYER_BOARDS.board[2]);
             }
         }
         else {
-            move = change_to_human_language(get_occupancy(BOARD.black), get_occupancy(ALL_LAYER_BOARDS.board[0].black));eval = ALL_LAYER_BOARDS.eval[0];
+            if (!has_position_occured_two_times(ALL_LAYER_BOARDS.board[0]) || ALL_LAYER_BOARDS.eval[0] > 0) {
+                move = change_to_human_language(get_occupancy(BOARD.black), get_occupancy(ALL_LAYER_BOARDS.board[0].black));eval = ALL_LAYER_BOARDS.eval[0];
+                check_for_three_fold_repetition.push_back(ALL_LAYER_BOARDS.board[0]);
+            }
+            else if (!has_position_occured_two_times(ALL_LAYER_BOARDS.board[1]) && ALL_LAYER_BOARDS.n > 1) {
+                move = change_to_human_language(get_occupancy(BOARD.black), get_occupancy(ALL_LAYER_BOARDS.board[1].black));eval = ALL_LAYER_BOARDS.eval[1];
+                check_for_three_fold_repetition.push_back(ALL_LAYER_BOARDS.board[1]);
+            }
+            else if (ALL_LAYER_BOARDS.n > 2) {
+                move = change_to_human_language(get_occupancy(BOARD.black), get_occupancy(ALL_LAYER_BOARDS.board[2].black));eval = ALL_LAYER_BOARDS.eval[2];
+                check_for_three_fold_repetition.push_back(ALL_LAYER_BOARDS.board[2]);
+            }
         }
         std::cout << move << "\nEval: " << std::fixed << std::setprecision(3) << eval / 100.0 << "\n\n" << line;
         ALL_LAYER_BOARDS.n = 0;
@@ -2756,7 +2858,7 @@ void DoTheThing(bool White, std::unordered_map<std::string, std::string> precomp
     inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr.s_addr);
 
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(White? 6969 : 6970);
+    addr.sin_port = htons(White ? 6969 : 6970);
     connect(server, reinterpret_cast<SOCKADDR*>(&addr), sizeof(addr));
     std::cout << "Connected to server!\n";
 
@@ -2770,18 +2872,18 @@ void DoTheThing(bool White, std::unordered_map<std::string, std::string> precomp
         result = recv(server, recvbuf, recvbuflen, 0);
         std::string message(recvbuf);
         message = message.substr(0, result);
-        cout <<line<<"|" << message << "|\n";
+        cout << line << "|" << message << "|\n";
 
 
         if (message.length() < 8) { std::cout << "An error occured, do you want to continue?";std::cin >> eh; }
-        else if(moveCount < 18 && !precomputed_moves.empty()){
-            std::vector<std::string> split_fen = split(message,' ');
+        else if (moveCount < 18 && !precomputed_moves.empty()) {
+            std::vector<std::string> split_fen = split(message, ' ');
             std::string cut_fen = split_fen[0] + ' ' + split_fen[1] + ' ' + split_fen[2] + ' ' + split_fen[3];
             auto location = precomputed_moves.find(cut_fen);
             if (location != precomputed_moves.end()) {
                 cout << line << "\n";
                 best_move = location->second;
-                cout << "Precomputed move: \n"<< best_move<<"\n\n";
+                cout << "Precomputed move: \n" << best_move << "\n\n";
             }
             else {
                 chessboard BOARD = initialize_chessboard(message, White, time);
@@ -2794,12 +2896,12 @@ void DoTheThing(bool White, std::unordered_map<std::string, std::string> precomp
             chessboard BOARD = initialize_chessboard(message, White, time);
             generate_moves(BOARD, White, DEPTH, best_move, cut_fen);
         }
-        
+
 
         send(server, best_move.c_str(), best_move.length(), 0);
         moveCount += 2;
     } while (result > 0);
-} 
+}
 int main()
 {
     std::string best_move;
@@ -2815,8 +2917,8 @@ int main()
         cout <<"|" << eh.first << "|" << eh.second << "|\n";
     }*/
 
-    DoTheThing(1, precomputed_moves);//0 for black and 1 for white
-    
+    DoTheThing(0, precomputed_moves);//0 for black and 1 for white
+
     /*
     //manual testing
     //string fen = "INSERT_FEN_HERE";
@@ -2825,16 +2927,3 @@ int main()
     BOARD = initialize_chessboard(fen, white, time);
     generate_moves(BOARD, white, DEPTH, best_move);//*/
 }
-/*
-FENS:
-starting pos -
-not working pos - rnbqkbnr/pppp1ppp/8/4p3/8/7N/PPPPPPPP/RNBQKB1R w KQkq e6 0 2 2759868 958444
-r1bqkb1r/ppp2p1p/2n4n/4p3/8/8/PPPpPPRP/1RBQKB2 w kq - 0 12 3357325 1520344 - cant check for check
-rnbqkbnr/pppppp2/7p/6N1/8/8/PPPPPPPP/RNBQKB1R w KQkq - 0 3 2819587 1007158
-rnb1kb1r/ppp2ppp/B4n2/4p3/8/5PPN/3B3P/1q2K1R1 w kq - 0 16 3592302 1760582
-rn1qkb2/p1p4p/1p6/B7/4p3/7b/PPP1p2P/RQ4K1 w q - 0 19 3764085 1919954
-
-
-*/
-
-//I have no fuking idea why does this code work but it work//change sort_moves_or_something_i_think to sort accordingly to white or black(I have no clue why it dont work when done automatically
